@@ -16,5 +16,6 @@ clients:
     read-timeout: 5s
   todos:
     base-url: ${TODOS_BASE_URL:https://jsonplaceholder.typicode.com}
-    connect-timeout: 2s
-    read-timeout: 3s
+    # Connecting to the public service was measured above 2s, mostly on the first TLS handshake.
+    connect-timeout: 3s
+    read-timeout: 5s

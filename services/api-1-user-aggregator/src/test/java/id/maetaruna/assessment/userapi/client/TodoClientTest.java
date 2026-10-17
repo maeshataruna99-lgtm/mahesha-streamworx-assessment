@@ -50,6 +50,46 @@ class TodoClientTest {
     }
 
     @Test
+    void givesUpWhenTheBodyStallsAfterTheHeaders() {
+        try (StubHttpServer todos = StubHttpServer.stallAfterHeaders("/todos", "application/json", TODOS,
+                Duration.ofSeconds(4))) {
+            long start = System.nanoTime();
+
+            Map<Integer, List<TodoItem>> byUser = client(todos.baseUrl()).todosByUserId();
+
+            assertThat(byUser).isEmpty();
+            assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofMillis(2500));
+        }
+    }
+
+    @Test
+    void fallsBackToTheLastSuccessfulTodosWhenTheServiceFails() {
+        try (StubHttpServer todos = StubHttpServer.respond("/todos", 200, "application/json", TODOS)) {
+            TodoClient client = client(todos.baseUrl());
+            Map<Integer, List<TodoItem>> fresh = client.todosByUserId();
+
+            todos.respondWith(503, "text/plain", "down");
+
+            assertThat(client.todosByUserId()).isEqualTo(fresh).isNotEmpty();
+        }
+    }
+
+    @Test
+    void warmUpKeepsTryingUntilTheServiceAnswers() throws InterruptedException {
+        try (StubHttpServer todos = StubHttpServer.respond("/todos", 503, "text/plain", "down")) {
+            TodoClient client = client(todos.baseUrl());
+
+            Thread warmUp = client.warmUp(5, Duration.ofMillis(200));
+            Thread.sleep(300);
+            todos.respondWith(200, "application/json", TODOS);
+            warmUp.join(Duration.ofSeconds(5));
+            todos.respondWith(503, "text/plain", "down again");
+
+            assertThat(client.todosByUserId()).containsOnlyKeys(1, 2);
+        }
+    }
+
+    @Test
     void fallsBackToNoTodosOnServerError() {
         try (StubHttpServer todos = StubHttpServer.respond("/todos", 503, "text/plain", "down")) {
             assertThat(client(todos.baseUrl()).todosByUserId()).isEmpty();
