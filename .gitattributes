@@ -1,0 +1,5 @@
+# Files are copied into Linux containers as-is, so CRLF from a Windows checkout would break shell scripts.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.jar binary
