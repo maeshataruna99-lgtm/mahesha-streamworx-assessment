@@ -65,6 +65,14 @@ class GatewayRoutesTest {
     }
 
     @Test
+    void isHealthyOnceEveryRoutedServiceIsRegistered() throws Exception {
+        HttpResponse<String> response = get("/actuator/health");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).contains("\"status\":\"UP\"");
+    }
+
+    @Test
     void servesTheEurekaRegistry() throws Exception {
         HttpResponse<String> response = get("/eureka/apps");
 

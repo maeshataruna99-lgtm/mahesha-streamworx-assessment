@@ -24,3 +24,6 @@ eureka:
       defaultZone: ${EUREKA_URL:http://localhost:8080/eureka/}
   instance:
     prefer-ip-address: true
+    # Also how soon a failed first registration is retried when Eureka starts after this service.
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 15

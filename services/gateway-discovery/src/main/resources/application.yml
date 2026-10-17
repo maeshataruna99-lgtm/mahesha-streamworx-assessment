@@ -17,13 +17,22 @@ spring:
               uri: lb://api-2-post-xml
               predicates:
                 - Path=/api/posts/**
+    # Defaults keep an empty instance list for 35s, which would outlive a service registering late.
+    loadbalancer:
+      cache:
+        ttl: 5s
 
 # This application is the Eureka server and also reads its own registry to resolve lb:// routes.
+# The intervals are shortened from the 30s defaults so a freshly started service is routable within seconds.
 eureka:
   instance:
     hostname: localhost
   client:
     register-with-eureka: false
     fetch-registry: true
+    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: http://localhost:${server.port}/eureka/
+  server:
+    use-read-only-response-cache: false
+    enable-self-preservation: false

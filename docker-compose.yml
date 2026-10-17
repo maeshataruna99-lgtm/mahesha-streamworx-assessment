@@ -7,6 +7,8 @@ services:
       dockerfile: services/gateway-discovery/Dockerfile
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
+    # Healthy only once api-1 and api-2 are registered and routable, so the APIs wait for it to
+    # start rather than to be healthy.
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
       interval: 5s
@@ -46,7 +48,7 @@ services:
       EUREKA_URL: http://gateway-discovery:8080/eureka/
     depends_on:
       gateway-discovery:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_healthy
       api-2:
@@ -70,7 +72,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-assessment}
     depends_on:
       gateway-discovery:
-        condition: service_healthy
+        condition: service_started
       postgres:
         condition: service_healthy
     healthcheck:
