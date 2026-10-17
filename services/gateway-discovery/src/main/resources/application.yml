@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-discovery
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: api-1-users
+              uri: lb://api-1-user-aggregator
+              predicates:
+                - Path=/api/users/**
+            - id: api-2-posts
+              uri: lb://api-2-post-xml
+              predicates:
+                - Path=/api/posts/**
+
+# This application is the Eureka server and also reads its own registry to resolve lb:// routes.
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    register-with-eureka: false
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:${server.port}/eureka/
