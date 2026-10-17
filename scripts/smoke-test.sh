@@ -7,8 +7,27 @@ BASE_URL="${1:-http://localhost:8080}"
 WAIT_SECONDS="${WAIT_SECONDS:-120}"
 failures=0
 
-pass() { printf 'PASS  %s\n' "$1"; }
-fail() { printf 'FAIL  %s\n' "$1"; failures=$((failures + 1)); }
+expect_count() {
+    if [ "$2" = "$3" ]; then
+        printf 'PASS  %s: %s\n' "$1" "$3"
+    else
+        printf 'FAIL  %s: expected %s, got %s\n' "$1" "$3" "$2"
+        failures=$((failures + 1))
+    fi
+}
+
+expect_match() {
+    if printf '%s' "$2" | grep -q "$3"; then
+        printf 'PASS  %s\n' "$1"
+    else
+        printf 'FAIL  %s\n' "$1"
+        failures=$((failures + 1))
+    fi
+}
+
+count() {
+    printf '%s' "$1" | grep -o "$2" | wc -l | tr -d ' '
+}
 
 # Without `docker compose up --wait` the services may still be registering with Eureka.
 waited=0
@@ -22,28 +41,26 @@ until [ "$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/api/users")" = 200 
     waited=$((waited + 2))
 done
 
-users=$(curl -s -H 'Accept: application/json' "$BASE_URL/api/users")
-user_count=$(printf '%s' "$users" | grep -o '"username"' | wc -l | tr -d ' ')
-todo_count=$(printf '%s' "$users" | grep -o '"completed"' | wc -l | tr -d ' ')
-post_count=$(printf '%s' "$users" | grep -o '"body"' | wc -l | tr -d ' ')
+users=$(curl -s "$BASE_URL/api/users")
+expect_count "users in /api/users" "$(count "$users" '"username"')" 10
+expect_count "posts in /api/users" "$(count "$users" '"body"')" 100
+expect_match "nested address.geo in /api/users" "$users" '"geo":{"lat":"-37.3159","lng":"81.1496"}'
 
-[ "$user_count" = 10 ] && pass "/api/users returns 10 users" || fail "/api/users returned $user_count users"
-[ "$post_count" = 100 ] && pass "/api/users includes 100 posts" || fail "/api/users included $post_count posts"
-if [ "$todo_count" = 200 ]; then
-    pass "/api/users includes 200 todos"
+todos=$(count "$users" '"completed"')
+if [ "$todos" = 200 ]; then
+    printf 'PASS  todos in /api/users: 200\n'
 else
     # Todos come from jsonplaceholder.typicode.com; without internet access users are returned without them.
-    printf 'WARN  /api/users included %s todos (is jsonplaceholder.typicode.com reachable?)\n' "$todo_count"
+    printf 'WARN  todos in /api/users: %s (is jsonplaceholder.typicode.com reachable?)\n' "$todos"
 fi
-printf '%s' "$users" | grep -q '"geo":{"lat":"-37.3159","lng":"81.1496"}' \
-    && pass "/api/users keeps nested address.geo" || fail "/api/users is missing address.geo"
 
 posts=$(curl -s "$BASE_URL/api/posts")
-row_count=$(printf '%s' "$posts" | grep -o '<row>' | wc -l | tr -d ' ')
-[ "$row_count" = 100 ] && pass "/api/posts returns 100 rows" || fail "/api/posts returned $row_count rows"
-printf '%s' "$posts" | grep -q '^<?xml' && pass "/api/posts starts with an XML declaration" \
-    || fail "/api/posts has no XML declaration"
-printf '%s' "$posts" | grep -q '<root><row><userId>1</userId><id>1</id><title>' \
-    && pass "/api/posts uses <root>/<row> with userId, id, title" || fail "/api/posts has an unexpected structure"
+expect_count "rows in /api/posts" "$(count "$posts" '<row>')" 100
+expect_match "XML declaration in /api/posts" "$posts" '^<?xml'
+expect_match "<root>/<row> with userId, id, title in /api/posts" "$posts" '<root><row><userId>1</userId><id>1</id><title>'
 
-[ "$failures" -eq 0 ] && echo "All checks passed" || { echo "$failures check(s) failed"; exit 1; }
+if [ "$failures" -ne 0 ]; then
+    echo "$failures check(s) failed"
+    exit 1
+fi
+echo "All checks passed"
