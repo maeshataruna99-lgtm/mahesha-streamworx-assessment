@@ -16,6 +16,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>services/api-1-user-aggregator</module>
         <module>services/api-2-post-xml</module>
     </modules>
 
