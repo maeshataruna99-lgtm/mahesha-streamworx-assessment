@@ -24,6 +24,25 @@ services:
       timeout: 3s
       retries: 20
 
+  api-1:
+    build:
+      context: .
+      dockerfile: services/api-1-user-aggregator/Dockerfile
+    environment:
+      REDIS_HOST: redis
+      POSTS_BASE_URL: http://api-2:8082
+    depends_on:
+      redis:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q UP"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
   api-2:
     build:
       context: .
