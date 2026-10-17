@@ -17,3 +17,10 @@ spring:
     hibernate:
       # Schema is owned by the init scripts in infra/postgres/init.
       ddl-auto: validate
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8080/eureka/}
+  instance:
+    prefer-ip-address: true

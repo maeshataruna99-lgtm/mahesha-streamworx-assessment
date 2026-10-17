@@ -25,7 +25,8 @@ import org.xmlunit.diff.Diff;
 import org.xmlunit.diff.ElementSelectors;
 import org.xmlunit.xpath.JAXPXPathEngine;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "eureka.client.enabled=false")
 @Import(PostgresContainerConfig.class)
 class PostsXmlContractTest {
 

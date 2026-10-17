@@ -25,7 +25,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "eureka.client.enabled=false")
 @Import(RedisContainerConfig.class)
 class UsersJsonContractTest {
 
@@ -37,9 +38,11 @@ class UsersJsonContractTest {
     @LocalServerPort
     int port;
 
+    // api-2 is still looked up by its service name, as through Eureka in compose.
     @DynamicPropertySource
     static void clients(DynamicPropertyRegistry registry) {
-        registry.add("clients.posts.base-url", () -> API_2.baseUrl().toString());
+        registry.add("spring.cloud.discovery.client.simple.instances.api-2-post-xml[0].uri",
+                () -> API_2.baseUrl().toString());
         registry.add("clients.todos.base-url", () -> TODOS.baseUrl().toString());
     }
 

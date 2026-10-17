@@ -43,8 +43,10 @@ services:
       dockerfile: services/api-1-user-aggregator/Dockerfile
     environment:
       REDIS_HOST: redis
-      POSTS_BASE_URL: http://api-2:8082
+      EUREKA_URL: http://gateway-discovery:8080/eureka/
     depends_on:
+      gateway-discovery:
+        condition: service_healthy
       redis:
         condition: service_healthy
       api-2:
@@ -62,10 +64,13 @@ services:
       dockerfile: services/api-2-post-xml/Dockerfile
     environment:
       POSTGRES_HOST: postgres
+      EUREKA_URL: http://gateway-discovery:8080/eureka/
       POSTGRES_DB: ${POSTGRES_DB:-assessment}
       POSTGRES_USER: ${POSTGRES_USER:-assessment}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-assessment}
     depends_on:
+      gateway-discovery:
+        condition: service_healthy
       postgres:
         condition: service_healthy
     healthcheck:

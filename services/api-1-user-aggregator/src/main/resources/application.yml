@@ -9,9 +9,16 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8080/eureka/}
+  instance:
+    prefer-ip-address: true
+
 clients:
   posts:
-    base-url: ${POSTS_BASE_URL:http://localhost:8082}
+    base-url: http://api-2-post-xml
     connect-timeout: 2s
     read-timeout: 5s
   todos:
