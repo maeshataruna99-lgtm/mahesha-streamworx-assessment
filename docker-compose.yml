@@ -8,13 +8,13 @@ services:
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
     # Healthy only once api-1 and api-2 are registered and routable, so the APIs wait for it to
-    # start rather than to be healthy.
+    # start rather than to be healthy. The longer budget covers both APIs starting after it.
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q UP"]
       interval: 5s
       timeout: 3s
-      retries: 30
-      start_period: 20s
+      retries: 60
+      start_period: 60s
 
   postgres:
     image: postgres:18.6-alpine
