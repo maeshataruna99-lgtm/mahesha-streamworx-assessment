@@ -30,7 +30,8 @@ public class PostClient {
                     .accept(MediaType.APPLICATION_XML)
                     .retrieve()
                     .body(PostsXml.class);
-        } catch (RestClientException e) {
+        } catch (RestClientException | IllegalStateException e) {
+            // The load balancer throws IllegalStateException when api-2 has no registered instance.
             throw new PostsUnavailableException(e);
         }
         if (posts == null || posts.rows() == null) {
