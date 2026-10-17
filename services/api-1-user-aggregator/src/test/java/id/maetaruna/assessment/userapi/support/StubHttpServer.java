@@ -19,6 +19,7 @@ public final class StubHttpServer implements AutoCloseable {
     private final HttpServer server;
     private final AtomicInteger requests = new AtomicInteger();
     private volatile Behaviour behaviour;
+    private volatile int failuresBeforeBehaviour;
 
     private StubHttpServer(String path, Behaviour behaviour) {
         this.behaviour = behaviour;
@@ -43,6 +44,12 @@ public final class StubHttpServer implements AutoCloseable {
         return new StubHttpServer(path, new Behaviour(200, contentType, body, Duration.ZERO, stall));
     }
 
+    public static StubHttpServer failFirst(int failures, String path, String contentType, String body) {
+        StubHttpServer stub = respond(path, 200, contentType, body);
+        stub.failuresBeforeBehaviour = failures;
+        return stub;
+    }
+
     public void respondWith(int status, String contentType, String body) {
         behaviour = new Behaviour(status, contentType, body, Duration.ZERO, Duration.ZERO);
     }
@@ -61,8 +68,9 @@ public final class StubHttpServer implements AutoCloseable {
     }
 
     private void handle(HttpExchange exchange) throws IOException {
-        requests.incrementAndGet();
-        Behaviour current = behaviour;
+        Behaviour current = requests.incrementAndGet() <= failuresBeforeBehaviour
+                ? new Behaviour(503, "text/plain", "down", Duration.ZERO, Duration.ZERO)
+                : behaviour;
         sleep(current.delayBeforeHeaders());
         byte[] bytes = current.body().getBytes(StandardCharsets.UTF_8);
         exchange.getResponseHeaders().set("Content-Type", current.contentType());

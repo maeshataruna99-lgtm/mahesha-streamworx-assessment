@@ -77,15 +77,14 @@ class TodoClientTest {
 
     @Test
     void warmUpKeepsTryingUntilTheServiceAnswers() throws InterruptedException {
-        try (StubHttpServer todos = StubHttpServer.respond("/todos", 503, "text/plain", "down")) {
+        try (StubHttpServer todos = StubHttpServer.failFirst(2, "/todos", "application/json", TODOS)) {
             TodoClient client = client(todos.baseUrl());
 
-            Thread warmUp = client.warmUp(5, Duration.ofMillis(200));
-            Thread.sleep(300);
-            todos.respondWith(200, "application/json", TODOS);
-            warmUp.join(Duration.ofSeconds(5));
+            Thread warmUp = client.warmUp(5, Duration.ofMillis(50));
+            assertThat(warmUp.join(Duration.ofSeconds(5))).isTrue();
             todos.respondWith(503, "text/plain", "down again");
 
+            assertThat(todos.requestCount()).isEqualTo(3);
             assertThat(client.todosByUserId()).containsOnlyKeys(1, 2);
         }
     }
