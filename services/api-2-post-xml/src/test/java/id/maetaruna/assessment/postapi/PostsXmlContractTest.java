@@ -45,7 +45,9 @@ class PostsXmlContractTest {
         String actual = response.body();
         String sample = new ClassPathResource("contract/api-2-sample.xml").getContentAsString(StandardCharsets.UTF_8);
 
-        assertThat(actual).containsPattern("^<\\?xml version=['\"]1\\.0['\"] encoding=['\"]UTF-8['\"]\\?>");
+        // Layout of the sample: declaration, then <root> on its own line, rows indented by two spaces.
+        assertThat(actual).containsPattern(
+                "^<\\?xml version=\"1\\.0\" encoding=\"UTF-8\"\\?>\\R<root>\\R  <row>\\R    <userId>1</userId>\\R");
         assertThat(new JAXPXPathEngine().evaluate("count(/root/row)", source(actual))).isEqualTo("100");
 
         // The sample in the assignment truncates each body and prints newlines as a literal "\n",

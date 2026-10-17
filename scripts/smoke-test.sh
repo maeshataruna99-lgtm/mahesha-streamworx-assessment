@@ -44,7 +44,8 @@ done
 users=$(curl -s "$BASE_URL/api/users")
 expect_count "users in /api/users" "$(count "$users" '"username"')" 10
 expect_count "posts in /api/users" "$(count "$users" '"body"')" 100
-expect_match "nested address.geo in /api/users" "$users" '"geo":{"lat":"-37.3159","lng":"81.1496"}'
+expect_match "nested address.geo in /api/users" "$users" '"lat": "-37.3159"'
+expect_match "indented JSON in /api/users" "$users" '^    "id": 1,$'
 
 todos=$(count "$users" '"completed"')
 if [ "$todos" = 200 ]; then
@@ -56,8 +57,9 @@ fi
 
 posts=$(curl -s "$BASE_URL/api/posts")
 expect_count "rows in /api/posts" "$(count "$posts" '<row>')" 100
-expect_match "XML declaration in /api/posts" "$posts" '^<?xml'
-expect_match "<root>/<row> with userId, id, title in /api/posts" "$posts" '<root><row><userId>1</userId><id>1</id><title>'
+expect_match "XML declaration in /api/posts" "$posts" '^<?xml version="1.0" encoding="UTF-8"?>'
+expect_match "<root>/<row> with userId, id, title in /api/posts" "$posts" '^    <title>sunt aut facere'
+expect_match "indented XML in /api/posts" "$posts" '^<root>$'
 
 if [ "$failures" -ne 0 ]; then
     echo "$failures check(s) failed"

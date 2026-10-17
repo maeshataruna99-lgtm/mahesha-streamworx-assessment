@@ -58,6 +58,7 @@ class UsersJsonContractTest {
         String sample = fixture("contract/api-1-sample.json");
         JsonNode users = JsonMapper.shared().readTree(actual);
 
+        assertThat(actual).startsWith("[\n  {\n    \"id\": 1,\n    \"name\": \"Leanne Graham\",\n");
         assertThat(users).hasSize(10);
         assertThat(users.get(0).propertyNames()).containsExactly(
                 "id", "name", "username", "email", "address", "phone", "website", "company", "todos", "posts");
