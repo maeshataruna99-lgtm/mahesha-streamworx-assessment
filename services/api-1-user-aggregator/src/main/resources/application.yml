@@ -8,3 +8,9 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+
+clients:
+  posts:
+    base-url: ${POSTS_BASE_URL:http://localhost:8082}
+    connect-timeout: 2s
+    read-timeout: 5s
