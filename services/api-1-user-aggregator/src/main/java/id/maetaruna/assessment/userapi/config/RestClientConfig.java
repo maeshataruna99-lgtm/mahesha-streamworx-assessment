@@ -17,6 +17,11 @@ public class RestClientConfig {
         return restClient(properties.posts());
     }
 
+    @Bean
+    RestClient todoRestClient(ClientProperties properties) {
+        return restClient(properties.todos());
+    }
+
     public static RestClient restClient(Endpoint endpoint) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(endpoint.connectTimeout())

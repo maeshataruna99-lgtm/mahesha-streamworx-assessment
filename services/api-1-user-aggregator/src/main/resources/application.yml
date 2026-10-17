@@ -14,3 +14,7 @@ clients:
     base-url: ${POSTS_BASE_URL:http://localhost:8082}
     connect-timeout: 2s
     read-timeout: 5s
+  todos:
+    base-url: ${TODOS_BASE_URL:https://jsonplaceholder.typicode.com}
+    connect-timeout: 2s
+    read-timeout: 3s
