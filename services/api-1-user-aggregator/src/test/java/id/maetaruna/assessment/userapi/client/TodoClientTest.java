@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.health.contributor.Status;
 
 class TodoClientTest {
 
@@ -86,6 +87,33 @@ class TodoClientTest {
             todos.respondWith(503, "text/plain", "down again");
 
             assertThat(client.todosByUserId()).containsOnlyKeys(1, 2);
+        }
+    }
+
+    @Test
+    void warmUpStopsOnceTodosAreAlreadyKnown() throws InterruptedException {
+        try (StubHttpServer todos = StubHttpServer.respond("/todos", 200, "application/json", TODOS)) {
+            TodoClient client = client(todos.baseUrl());
+            client.todosByUserId();
+
+            client.warmUp(5, Duration.ofMillis(100)).join(Duration.ofSeconds(5));
+
+            assertThat(todos.requestCount()).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void healthIsOutOfServiceUntilWarmUpHasFinished() throws InterruptedException {
+        try (StubHttpServer todos = StubHttpServer.respond("/todos", 503, "text/plain", "down")) {
+            TodoClient client = client(todos.baseUrl());
+            TodosWarmUpHealthIndicator health = new TodosWarmUpHealthIndicator(client);
+
+            Thread warmUp = client.warmUp(3, Duration.ofMillis(300));
+
+            assertThat(health.health().getStatus()).isEqualTo(Status.OUT_OF_SERVICE);
+            warmUp.join(Duration.ofSeconds(5));
+            assertThat(health.health().getStatus()).isEqualTo(Status.UP);
+            assertThat(client.todosByUserId()).isEmpty();
         }
     }
 

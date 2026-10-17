@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class StubHttpServer implements AutoCloseable {
 
@@ -16,6 +17,7 @@ public final class StubHttpServer implements AutoCloseable {
     }
 
     private final HttpServer server;
+    private final AtomicInteger requests = new AtomicInteger();
     private volatile Behaviour behaviour;
 
     private StubHttpServer(String path, Behaviour behaviour) {
@@ -45,6 +47,10 @@ public final class StubHttpServer implements AutoCloseable {
         behaviour = new Behaviour(status, contentType, body, Duration.ZERO, Duration.ZERO);
     }
 
+    public int requestCount() {
+        return requests.get();
+    }
+
     public URI baseUrl() {
         return URI.create("http://localhost:" + server.getAddress().getPort());
     }
@@ -55,6 +61,7 @@ public final class StubHttpServer implements AutoCloseable {
     }
 
     private void handle(HttpExchange exchange) throws IOException {
+        requests.incrementAndGet();
         Behaviour current = behaviour;
         sleep(current.delayBeforeHeaders());
         byte[] bytes = current.body().getBytes(StandardCharsets.UTF_8);

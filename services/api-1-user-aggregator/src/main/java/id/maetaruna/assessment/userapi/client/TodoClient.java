@@ -28,6 +28,7 @@ public class TodoClient {
 
     private final RestClient restClient;
     private volatile Map<Integer, List<TodoItem>> lastSuccessful = Map.of();
+    private volatile boolean warmUpFinished;
 
     public TodoClient(@Qualifier("todoRestClient") RestClient restClient) {
         this.restClient = restClient;
@@ -50,15 +51,20 @@ public class TodoClient {
     // first successful fetch is retried in the background instead of being left to the first request.
     Thread warmUp(int attempts, Duration pause) {
         return Thread.ofVirtual().name("todos-warm-up").start(() -> {
-            for (int attempt = 1; attempt <= attempts && !fetch(); attempt++) {
-                try {
+            try {
+                for (int attempt = 1; attempt <= attempts && lastSuccessful.isEmpty() && !fetch(); attempt++) {
                     Thread.sleep(pause);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                warmUpFinished = true;
             }
         });
+    }
+
+    boolean isWarmUpFinished() {
+        return warmUpFinished;
     }
 
     private boolean fetch() {
