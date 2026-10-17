@@ -1,0 +1,15 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: api-2-post-xml
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:assessment}
+    username: ${POSTGRES_USER:assessment}
+    password: ${POSTGRES_PASSWORD:assessment}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema is owned by the init scripts in infra/postgres/init.
+      ddl-auto: validate
