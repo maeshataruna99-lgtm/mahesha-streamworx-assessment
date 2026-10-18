@@ -118,6 +118,35 @@ Defaults work without a `.env` file. To change them, copy `.env.example` to `.en
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `assessment` | PostgreSQL and API 2 |
 | `JVM_OPTIONS` | Serial GC, 160 MB heap, C1 only (see `docker-compose.yml`) | Gateway, API 1 and API 2 |
 
+### JVM defaults and their trade-off
+
+The default `JVM_OPTIONS` keep the three Spring Boot services small. Measured on one laptop
+(8 CPUs, Docker Desktop), averaged over two runs against the JVM defaults:
+
+| Metric | JVM defaults | `JVM_OPTIONS` default | Change |
+| --- | --- | --- | --- |
+| Memory when idle, whole stack | 974 MiB | 725 MiB | -25.6% |
+| CPU used until every service is healthy | 311 s | 102 s | -67.1% |
+| CPU per request, `/api/users` | 112.7 ms | 55.1 ms | -51.2% |
+| CPU per request, `/api/posts` | 47.2 ms | 20.1 ms | -57.4% |
+| p95 latency, `/api/users` (300 sequential requests) | 127 ms | 110 ms | -13.9% |
+
+The cost shows up under sustained load. With 50 parallel clients for 45 seconds, `/api/users`
+served 37 requests per second with a p95 of about 2.0 s, against 46 requests per second and about
+1.7 s with the JVM defaults, so it is roughly 20% slower there. `/api/posts` was faster
+(150 against 139 requests per second) and peak memory was 795 MiB against 1,184 MiB. No request
+failed and no service restarted in either run. Each figure comes from one or two runs and
+`/api/users` also depends on the todos call to the internet, so treat small differences as noise.
+
+To get the JVM defaults back, for example to compare on your own machine:
+
+```bash
+JVM_OPTIONS=-Dnoop=1 docker compose up --build --wait
+```
+
+The raw captures and the full comparison with the assignment sample are in
+[`docs/evidence/`](docs/evidence/README.md).
+
 ## Stack
 
 Java 25, Spring Boot 4.1.1, Spring Cloud 2025.1.3 (Gateway Server WebMVC and Netflix Eureka),
