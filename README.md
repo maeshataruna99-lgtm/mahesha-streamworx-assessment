@@ -1,9 +1,70 @@
+<div align="center">
+
 # Spring Boot Microservices Assessment
 
-Two Spring Boot REST APIs behind a gateway with service discovery, packaged as five Docker Compose
-services. API 1 combines users, todos and posts into one JSON response; API 2 serves posts as XML.
+**Two Spring Boot REST APIs behind a gateway with service discovery, packaged as five Docker Compose services.**
 
-## Run it
+API 1 combines users, todos and posts into one JSON response. API 2 serves posts as XML.
+
+![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.1-6DB33F?logo=springboot&logoColor=white)
+![Spring Cloud](https://img.shields.io/badge/Spring_Cloud-2025.1.3-6DB33F?logo=spring&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-8-DC382D?logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose_v2-2496ED?logo=docker&logoColor=white)
+
+[Stack](#-stack) · [Run it](#-run-it) · [Endpoints](#-endpoints) · [Architecture](#-architecture) · [Data](#-data) · [Failure behaviour](#-failure-behaviour) · [Tests](#-tests) · [Configuration](#-configuration)
+
+</div>
+
+---
+
+## 🧰 Stack
+
+| Technology | Version | Role | Link |
+| --- | --- | --- | --- |
+| Java | 25 | Language and runtime | [Download JDK 25](https://adoptium.net/temurin/releases/?version=25) |
+| Spring Boot | 4.1.1 | Application framework | [spring.io/projects/spring-boot](https://spring.io/projects/spring-boot) |
+| Spring Cloud | 2025.1.3 | Gateway Server WebMVC and Netflix Eureka | [spring.io/projects/spring-cloud](https://spring.io/projects/spring-cloud) |
+| PostgreSQL | 18 | Posts storage (runs in Docker) | [postgresql.org](https://www.postgresql.org/download/) |
+| Redis | 8 | Users storage (runs in Docker) | [redis.io](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) |
+| Maven | via Maven Wrapper | Multi-module build | [maven.apache.org](https://maven.apache.org/) |
+| Docker | Desktop with Compose v2 | Runs all five services | [docs.docker.com](https://docs.docker.com/desktop/setup/install/windows-install/) |
+
+The gateway uses the servlet-based Spring Cloud Gateway, so it runs in the same application as the
+Eureka server. That keeps the stack at the five services the assignment asks for.
+
+### Install the tools (Windows PowerShell)
+
+To only **run** the project you need just Git and Docker Desktop: PostgreSQL, Redis and the JDK
+all live inside the containers, and the build happens in Docker. Install the JDK only if you want
+to run `./mvnw verify` on your machine.
+
+```powershell
+# Required to run the stack
+winget install --id Git.Git -e
+winget install --id Docker.DockerDesktop -e
+
+# Optional: only to build and test outside Docker (Maven comes from ./mvnw)
+winget install --id EclipseAdoptium.Temurin.25.JDK -e
+```
+
+Restart the terminal after installing, then check the versions:
+
+```powershell
+git --version
+docker --version
+docker compose version     # Compose v2 is required
+java -version              # should print 25.x (optional)
+```
+
+PostgreSQL 18 and Redis 8 are pinned by the image tags in `docker-compose.yml`, and the Maven
+Wrapper downloads its own Maven, so there is nothing else to install. If `docker` is not found
+after install, start Docker Desktop once and wait until it says it is running.
+
+---
+
+## 🚀 Run it
 
 Requirements: Docker with Compose v2, and port 8080 free (set `GATEWAY_PORT` to use another one).
 
@@ -37,17 +98,23 @@ curl http://localhost:8080/api/posts
 docker compose ps        # all five services should be healthy
 ```
 
-Check both endpoints automatically. The script runs nine checks (counts, JSON and XML layout) and
-ends with `All checks passed`. On Windows run it from Git Bash, because `bash` in PowerShell points
-to WSL:
+### Check it automatically
+
+The script runs nine checks (counts, JSON and XML layout) and ends with `All checks passed`. On
+Windows run it from Git Bash, because `bash` in PowerShell points to WSL:
 
 ```bash
 bash scripts/smoke-test.sh
 ```
 
-If `todos` come back empty, the stack could not reach `jsonplaceholder.typicode.com`: todos are the
-only data fetched live, and the smoke test then prints a `WARN` instead of failing. A step-by-step
-walk-through with captured output and screenshots is in [`docs/evidence/`](docs/evidence/README.md).
+> [!NOTE]
+> If `todos` come back empty, the stack could not reach `jsonplaceholder.typicode.com`: todos are
+> the only data fetched live, and the smoke test then prints a `WARN` instead of failing.
+
+A step-by-step walk-through with captured output and screenshots is in
+[`docs/evidence/`](docs/evidence/README.md).
+
+### Stop
 
 Stop and remove the data volume:
 
@@ -55,7 +122,9 @@ Stop and remove the data volume:
 docker compose down -v
 ```
 
-## Endpoints
+---
+
+## 🔌 Endpoints
 
 Only the gateway publishes a port. Every request goes through `http://localhost:8080`.
 
@@ -66,14 +135,11 @@ Only the gateway publishes a port. Every request goes through `http://localhost:
 | GET | `/` | Gateway | Eureka dashboard with the registered services |
 | GET | `/actuator/health` | Gateway | `UP` once both APIs are routable |
 
-```bash
-curl http://localhost:8080/api/users
-curl http://localhost:8080/api/posts
-```
-
 Full responses captured from a running stack are in [`examples/`](examples/).
 
-## Architecture
+---
+
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
@@ -97,7 +163,21 @@ flowchart LR
 Following the assignment diagram, API 1 gets posts from API 2 rather than from the database. It
 finds API 2 through Eureka by its service name, `api-2-post-xml`.
 
-## Data
+### Project layout
+
+```
+services/
+  gateway-discovery/      Gateway routes and Eureka server
+  api-1-user-aggregator/  JSON API: Redis users + API 2 posts + external todos
+  api-2-post-xml/         XML API: PostgreSQL posts
+infra/postgres/init/      DDL and seed scripts, one file per table and purpose
+examples/                 Sample responses
+scripts/smoke-test.sh     End-to-end check through the gateway
+```
+
+---
+
+## 🗃️ Data
 
 All seed data is bundled in the repository, so no manual step and no internet access are needed to
 load it.
@@ -113,18 +193,19 @@ load it.
 Both snapshots were taken from jsonplaceholder on 2026-10-17. The SHA-256 of the posts source is in
 the header of `11-trx-seed-posts.sql`, and the one of `users.json` is in the commit that added it.
 
-## Failure behaviour
+---
 
-- **Todos service slow or down**: `/api/users` still answers. Each user gets the todos from the last
-  successful call, or an empty `todos` list if none has succeeded yet. Calls time out after 3s to
-  connect and 5s to read. At startup API 1 fetches the todos in the background and retries up to
-  five times, and its health stays out of service until that warm-up ends, whether it succeeded
-  or not.
-- **API 2 down**: `/api/users` answers `503 Service Unavailable` instead of returning users without
-  posts. `/api/posts` answers 503 from the gateway.
-- **Service not registered yet**: the gateway answers 503 rather than a generic 500.
+## 🛡️ Failure behaviour
 
-## Tests
+| Situation | What happens |
+| --- | --- |
+| **Todos service slow or down** | `/api/users` still answers. Each user gets the todos from the last successful call, or an empty `todos` list if none has succeeded yet. Calls time out after 3s to connect and 5s to read. At startup API 1 fetches the todos in the background and retries up to five times, and its health stays out of service until that warm-up ends, whether it succeeded or not. |
+| **API 2 down** | `/api/users` answers `503 Service Unavailable` instead of returning users without posts. `/api/posts` answers 503 from the gateway. |
+| **Service not registered yet** | The gateway answers 503 rather than a generic 500. |
+
+---
+
+## ✅ Tests
 
 ```bash
 ./mvnw verify
@@ -134,7 +215,9 @@ Needs JDK 25 and a running Docker daemon: repository and contract tests start Po
 with Testcontainers. The contract tests compare the responses with the sample output in the
 assignment.
 
-## Configuration
+---
+
+## ⚙️ Configuration
 
 Defaults work without a `.env` file. To change them, copy `.env.example` to `.env`.
 
@@ -172,23 +255,3 @@ JVM_OPTIONS=-Dnoop=1 docker compose up --build --wait
 
 The raw captures and the full comparison with the assignment sample are in
 [`docs/evidence/`](docs/evidence/README.md).
-
-## Stack
-
-Java 25, Spring Boot 4.1.1, Spring Cloud 2025.1.3 (Gateway Server WebMVC and Netflix Eureka),
-PostgreSQL 18, Redis 8, Maven multi-module build with the Maven Wrapper.
-
-The gateway uses the servlet-based Spring Cloud Gateway, so it runs in the same application as the
-Eureka server. That keeps the stack at the five services the assignment asks for.
-
-## Project layout
-
-```
-services/
-  gateway-discovery/      Gateway routes and Eureka server
-  api-1-user-aggregator/  JSON API: Redis users + API 2 posts + external todos
-  api-2-post-xml/         XML API: PostgreSQL posts
-infra/postgres/init/      DDL and seed scripts, one file per table and purpose
-examples/                 Sample responses
-scripts/smoke-test.sh     End-to-end check through the gateway
-```
