@@ -17,11 +17,37 @@ docker compose up --build --wait
 are registered and routable, so the endpoints work as soon as the command finishes. The first build
 downloads Maven dependencies and takes a few minutes; later starts take about a minute.
 
-Check both endpoints:
+### See the result
+
+Once the command returns, open these in a browser (replace `8080` if you set `GATEWAY_PORT`):
+
+| URL | What you should see |
+| --- | --- |
+| <http://localhost:8080/api/users> | JSON with 10 users, each with `todos` and `posts` |
+| <http://localhost:8080/api/posts> | XML with a `<root>` of 100 `<row>` elements |
+| <http://localhost:8080/> | Eureka dashboard, with `API-1-USER-AGGREGATOR` and `API-2-POST-XML` both `UP` |
+| <http://localhost:8080/actuator/health> | `UP` |
+
+Or from a terminal. In Windows PowerShell use `curl.exe`, because plain `curl` is an alias for
+another command:
 
 ```bash
-scripts/smoke-test.sh
+curl http://localhost:8080/api/users
+curl http://localhost:8080/api/posts
+docker compose ps        # all five services should be healthy
 ```
+
+Check both endpoints automatically. The script runs nine checks (counts, JSON and XML layout) and
+ends with `All checks passed`. On Windows run it from Git Bash, because `bash` in PowerShell points
+to WSL:
+
+```bash
+bash scripts/smoke-test.sh
+```
+
+If `todos` come back empty, the stack could not reach `jsonplaceholder.typicode.com`: todos are the
+only data fetched live, and the smoke test then prints a `WARN` instead of failing. A step-by-step
+walk-through with captured output and screenshots is in [`docs/evidence/`](docs/evidence/README.md).
 
 Stop and remove the data volume:
 
