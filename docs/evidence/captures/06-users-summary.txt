@@ -1,0 +1,6 @@
+user  : 10
+todo  : 200
+post  : 100
+field user pertama : id, name, username, email, address, phone, website, company, todos, posts
+field todo pertama : id, title, completed
+field post pertama : id, title, body

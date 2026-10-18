@@ -1,0 +1,6 @@
+NAME                               CPU %     MEM USAGE / LIMIT     MEM %
+docs-capture-api-1-1               9.83%     216.2MiB / 7.677GiB   2.75%
+docs-capture-api-2-1               11.00%    238.1MiB / 7.677GiB   3.03%
+docs-capture-gateway-discovery-1   2.01%     206.9MiB / 7.677GiB   2.63%
+docs-capture-postgres-1            0.05%     56.77MiB / 7.677GiB   0.72%
+docs-capture-redis-1               0.26%     6.266MiB / 7.677GiB   0.08%

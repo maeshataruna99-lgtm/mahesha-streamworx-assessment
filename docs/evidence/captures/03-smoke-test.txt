@@ -1,0 +1,10 @@
+PASS  users in /api/users: 10
+PASS  posts in /api/users: 100
+PASS  nested address.geo in /api/users
+PASS  indented JSON in /api/users
+PASS  todos in /api/users: 200
+PASS  rows in /api/posts: 100
+PASS  XML declaration in /api/posts
+PASS  <root>/<row> with userId, id, title in /api/posts
+PASS  indented XML in /api/posts
+All checks passed
