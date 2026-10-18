@@ -116,6 +116,7 @@ Defaults work without a `.env` file. To change them, copy `.env.example` to `.en
 | --- | --- | --- |
 | `GATEWAY_PORT` | `8080` | Host port of the gateway |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `assessment` | PostgreSQL and API 2 |
+| `JVM_OPTIONS` | Serial GC, 160 MB heap, C1 only (see `docker-compose.yml`) | Gateway, API 1 and API 2 |
 
 ## Stack
 
